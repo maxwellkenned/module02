@@ -16,7 +16,6 @@ class UserController {
     if (!(await schema.isValid(req.body))) {
       return res.status(400).json({ error: 'Validations fails.' });
     }
-
     const userExists = await User.findOne({ where: { email: req.body.email } });
 
     if (userExists) {
@@ -33,9 +32,8 @@ class UserController {
     });
   }
 
-  async list(req, res) {
+  async index(req, res) {
     const users = await User.findAll();
-
     res.json(users);
   }
 
