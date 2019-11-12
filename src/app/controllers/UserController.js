@@ -33,7 +33,13 @@ class UserController {
   }
 
   async index(req, res) {
-    const users = await User.findAll();
+    const { page = 1, limit = 20 } = req.query;
+
+    const users = await User.findAll({
+      limit,
+      offset: (page - 1) * limit,
+    });
+
     res.json(users);
   }
 
