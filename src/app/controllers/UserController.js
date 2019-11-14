@@ -2,6 +2,25 @@ import * as Yup from 'yup';
 import User from '../models/User';
 
 class UserController {
+  async index(req, res) {
+    const schema = Yup.object().shape({
+      page: Yup.number().min(1),
+    });
+
+    if (!(await schema.isValid(req.query))) {
+      return res.status(400).json({ error: 'Query fails.' });
+    }
+
+    const { page = 1, limit = 20 } = req.query;
+
+    const users = await User.findAll({
+      limit,
+      offset: (page - 1) * limit,
+    });
+
+    res.json(users);
+  }
+
   async store(req, res) {
     const schema = Yup.object().shape({
       name: Yup.string().required(),
@@ -30,25 +49,6 @@ class UserController {
       email,
       provider,
     });
-  }
-
-  async index(req, res) {
-    const schema = Yup.object().shape({
-      page: Yup.number().min(1),
-    });
-
-    if (!(await schema.isValid(req.query))) {
-      return res.status(400).json({ error: 'Query fails.' });
-    }
-
-    const { page = 1, limit = 20 } = req.query;
-
-    const users = await User.findAll({
-      limit,
-      offset: (page - 1) * limit,
-    });
-
-    res.json(users);
   }
 
   async update(req, res) {

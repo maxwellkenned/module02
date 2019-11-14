@@ -1,13 +1,20 @@
 import * as Yup from 'yup';
-import { parseISO, startOfDay } from 'date-fns';
-
+import { parseISO, startOfDay, endOfDay } from 'date-fns';
 import { Sequelize } from 'sequelize';
+
 import Appointment from '../models/Appointments';
 import User from '../models/User';
-import File from '../models/File';
 
 class ScheduleController {
   async index(req, res) {
+    const checkUserProvider = await User.findOne({
+      where: { id: req.userId, provider: true },
+    });
+
+    if (!checkUserProvider) {
+      return res.status(401).json({ error: 'You arent a provider.' });
+    }
+
     const schema = Yup.object().shape({
       page: Yup.number().min(1),
     });
@@ -17,31 +24,18 @@ class ScheduleController {
     }
 
     const { page = 1, limit = 20, date = new Date() } = req.query;
-    const dateStart = startOfDay(parseISO(date));
+    const parsedDate = parseISO(date);
     const { Op } = Sequelize;
 
     const appointments = await Appointment.findAll({
       where: {
         provider_id: req.userId,
-        date: { [Op.gte]: dateStart },
+        date: { [Op.between]: [startOfDay(parsedDate), endOfDay(parsedDate)] },
         canceled_at: null,
       },
       order: ['date'],
-      attributes: ['id', 'date'],
       limit,
       offset: (page - 1) * limit,
-      include: [
-        {
-          model: User,
-          as: 'provider',
-          attributes: ['id', 'name'],
-          include: {
-            model: File,
-            as: 'avatar',
-            attributes: ['id', 'path', 'url'],
-          },
-        },
-      ],
     });
 
     return res.json(appointments);
